@@ -38,7 +38,7 @@ def segmentWords(query: str, unigramCost: Callable[[str], float]) -> str:
     ucs.solve(SegmentationProblem(query, unigramCost))
 
     if ucs.actions is None:
-        return '' # cannot segment this query
+        return query # cannot segment this query
     return ' '.join(ucs.actions) # minimum-cost path is the segmented words with lowest unigram cost
 
 
@@ -84,7 +84,7 @@ def insertVowels(queryWords: List[str], bigramCost: Callable[[str, str], float],
     ucs.solve(VowelInsertionProblem(queryWords, bigramCost, possibleFills))
 
     if ucs.actions is None:
-        return '' # cannot segment this query
+        return ' '.join(queryWords) # cannot segment this query
     return ' '.join(ucs.actions) # minimum-cost path is the segmented words with lowest unigram cost
 
 
@@ -132,7 +132,7 @@ def segmentAndInsert(query: str, bigramCost: Callable[[str, str], float],
     ucs.solve(JointSegmentationInsertionProblem(query, bigramCost, possibleFills))
 
     if ucs.actions is None:
-        return '' # cannot segment this query
+        return query # cannot segment this query
     return ' '.join(ucs.actions) # minimum-cost path is the segmented words with lowest bigram cost
 
 
