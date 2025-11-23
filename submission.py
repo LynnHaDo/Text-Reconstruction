@@ -14,19 +14,20 @@ class SegmentationProblem(util.SearchProblem):
         self.unigramCost = unigramCost
 
     def startState(self):
-        # BEGIN_YOUR_CODE (our solution is 1 line of code, but don't worry if you deviate from this)
-        raise Exception("Not implemented yet")
-        # END_YOUR_CODE
+        return 0
 
     def isEnd(self, state) -> bool:
-        # BEGIN_YOUR_CODE (our solution is 2 lines of code, but don't worry if you deviate from this)
-        raise Exception("Not implemented yet")
-        # END_YOUR_CODE
+        return state == len(self.query)
 
     def succAndCost(self, state):
-        # BEGIN_YOUR_CODE (our solution is 7 lines of code, but don't worry if you deviate from this)
-        raise Exception("Not implemented yet")
-        # END_YOUR_CODE
+        successors = []
+        
+        for i in range(state + 1, len(self.query) + 1):
+            word = self.query[state:i]
+            cost = self.unigramCost(word)
+            successors.append((word, i, cost))
+        
+        return successors
 
 
 def segmentWords(query: str, unigramCost: Callable[[str], float]) -> str:
@@ -36,9 +37,9 @@ def segmentWords(query: str, unigramCost: Callable[[str], float]) -> str:
     ucs = util.UniformCostSearch(verbose=0)
     ucs.solve(SegmentationProblem(query, unigramCost))
 
-    # BEGIN_YOUR_CODE (our solution is 3 lines of code, but don't worry if you deviate from this)
-    raise Exception("Not implemented yet")
-    # END_YOUR_CODE
+    if ucs.actions is None:
+        return '' # cannot segment this query
+    return ' '.join(ucs.actions) # minimum-cost path is the segmented words with lowest unigram cost
 
 
 ############################################################
