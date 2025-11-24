@@ -7,9 +7,6 @@ import pickle
 import nltk
 from nltk.corpus import webtext, brown
 
-nltk.download('brown')
-nltk.download('webtext')
-
 CORPUS_DIR = "corpus"
 BROWN_CORPUS_FILENAME = 'corpus_brown.pkl'
 WEBTEXT_CORPUS_FILENAME = 'corpus_webtext.pkl'
@@ -111,6 +108,8 @@ def set_up_corpus(corpus_name: str):
         corpus_filename = os.path.join(CORPUS_DIR, BROWN_CORPUS_FILENAME)
         raw_words = brown.words()
 
+    nltk.download(corpus_name)
+    
     if not os.path.exists(corpus_filename):
         print(f"Saving to {corpus_filename}...")
         os.makedirs(CORPUS_DIR, exist_ok=True)
