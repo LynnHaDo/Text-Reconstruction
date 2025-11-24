@@ -93,7 +93,7 @@ def build_confusion_matrix(correct_word, wrong_word):
         _, correct_char, wrong_char = edit_type 
         trans_matrix[correct_char][wrong_char] += 1
 
-# pairs = parse_birkbeck("missp.dat")
-# for correct, wrong in pairs: 
-#     build_confusion_matrix(correct, wrong)
-# print(sub_matrix)
+pairs = parse_birkbeck("missp.dat")
+for correct, wrong in pairs: 
+    build_confusion_matrix(correct, wrong)
+print(sub_matrix)
