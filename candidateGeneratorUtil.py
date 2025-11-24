@@ -6,7 +6,7 @@ LOWER_CASE_RANGE = range(97, 123)
 class CandidateGeneratorUtil:
     def __init__(self, corpus_name = "brown"):
         self.corpus_name = corpus_name
-        self.word_list = set_up_corpus(self.corpus_name)
+        self.word_set = set(set_up_corpus(self.corpus_name))
         
     def generate_one_distance_candidates(self, candidate: str) -> Set[str]:
         """
@@ -31,7 +31,7 @@ class CandidateGeneratorUtil:
         successors.update(self._generate_deletion_candidates(candidate))
         successors.update(self._generate_insertion_candidates(candidate))
         successors.update(self._generate_transposition_candidates(candidate))
-        successors = {word for word in successors if word in self.word_list}
+        successors = {word for word in successors if word in self.word_set}
         return successors
         
     def _generate_substitute_candidates(self, candidate):
