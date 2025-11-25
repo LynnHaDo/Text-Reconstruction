@@ -72,4 +72,4 @@ class CandidateGeneratorUtil:
         
 if __name__ == "__main__":
     generator = CandidateGeneratorUtil()
-    print(generator.generate_one_distance_candidates("receve"))
+    # print(generator.generate_one_distance_candidates("jewlery"))

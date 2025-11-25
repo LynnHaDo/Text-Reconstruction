@@ -1,6 +1,5 @@
 from collections import Counter 
 from confusionMatrix import get_edit_type, del_matrix, sub_matrix, trans_matrix, insert_matrix
-from calcWordProb import calcWordProb
 import math
 import sys
 import os
@@ -60,22 +59,7 @@ def calcProbGivenCorrectWord(correct_word, wrong_word):
         return num / denom
     return 0.0
 
-# def calcFinalScore(wrong_word, candidate_list, freq_map):
-#     max_score = float('-inf')
-#     best_candidate = []
-#     for word in candidate_list:
-#         word_prob = calcWordProb(word, freq_map)
-#         bayes_prob = math.log(calcProbGivenCorrectWord(word, wrong_word))
-#         curr_score = word_prob + bayes_prob 
-#         if curr_score > max_score:
-#             max_score = curr_score 
-#             best_candidate.append(word)
-#         elif curr_score == max_score:
-#             best_candidate.append(word)
-#     return best_candidate
 unigramCost, bigramCost, freq_map = makeLanguageModels(CORPUS)
-# print("freq_map", freq_map)
-# print(calcFinalScore("acress", ["access", "actress", "across", "acres", "caress"], freq_map))
 
 def calcFinalScore(sentence, wrong_word, candidate_list, freq_map):
     words = sentence.split()
@@ -84,10 +68,10 @@ def calcFinalScore(sentence, wrong_word, candidate_list, freq_map):
     next_word = words[idx + 1] if idx < len(words) - 1 else ""
     best_candidate = [] 
     max_score = float('-inf')
-    lambda_mix = 0.3
+    lambda_mix = 0.5
     for word in candidate_list:
-        print(word, get_edit_type(word, wrong_word))
-        word_prob = calcWordProb(word, freq_map)
+        # print(word, get_edit_type(word, wrong_word))
+        # word_prob = calcWordProb(word, freq_map)
         em_prob = calcProbGivenCorrectWord(word, wrong_word)
 
         bayes_prob = math.log(em_prob) if em_prob > 0 else -1e9
@@ -95,22 +79,26 @@ def calcFinalScore(sentence, wrong_word, candidate_list, freq_map):
         left_lm = lambda_mix * (-unigramCost(word)) + (1 - lambda_mix) * prev_prob
         right_prob = -bigramCost(word, next_word) if next_word else 0
         right_lm = lambda_mix * (-unigramCost(next_word)) + (1 - lambda_mix) * right_prob
-        print("====", word, "====")
+        # print("====", word, "====")
         # print("left_lm  =", prev_prob)
-        print("left_lm  =", left_lm)
+        # print("left_lm  =", left_lm)
 
         # print("right_lm =", right_prob)
-        print("right_lm =", right_lm)
+        # print("right_lm =", right_lm)
 
-        print("error_lm =", bayes_prob)
+        # print("error_lm =", bayes_prob)
         # score =  prev_prob + right_prob
-        score = right_lm + left_lm
-        print("curr_score, word", score, word)
+        score = right_lm + left_lm + bayes_prob
+        # print("curr_score, word", score, word)
         if score > max_score:
             max_score = score 
             best_candidate = word
-        # elif score == max_score:
-        #     best_candidate.append(word)
+
     return best_candidate
-sentence = "He finaly admitted he was wrong"
-print(calcFinalScore(sentence, "finaly",['finale', 'final', 'finals', 'finely', 'finally'], freq_map))
+sentence = "She picked a frash apple from the tree"
+print(calcFinalScore(sentence, "frash",
+                     [
+'flash', 'fresh', 'brash', 'crash', 'rash', 'trash'
+
+                         ], 
+                     freq_map))
