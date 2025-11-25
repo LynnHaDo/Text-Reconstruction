@@ -1,8 +1,17 @@
 import argparse
 import submission
 import sys
+import os
 import wordsegUtil
+import pickle
+import nltk
+from nltk.corpus import webtext, brown
 
+CORPUS_DIR = "corpus"
+BROWN_CORPUS_FILENAME = 'corpus_brown.pkl'
+WEBTEXT_CORPUS_FILENAME = 'corpus_webtext.pkl'
+
+CORPUS = None
 
 def parseArgs():
     p = argparse.ArgumentParser()
@@ -91,6 +100,27 @@ def repl(unigramCost, bigramCost, possibleFills, command=None):
 
         print('')
 
+def set_up_corpus(corpus_name: str):
+    if corpus_name == 'webtext':
+        corpus_filename = os.path.join(CORPUS_DIR, WEBTEXT_CORPUS_FILENAME)
+        raw_words = webtext.words()
+    else:
+        corpus_filename = os.path.join(CORPUS_DIR, BROWN_CORPUS_FILENAME)
+        raw_words = brown.words()
+
+    nltk.download(corpus_name)
+    
+    if not os.path.exists(corpus_filename):
+        print(f"Saving to {corpus_filename}...")
+        os.makedirs(CORPUS_DIR, exist_ok=True)
+        with open(corpus_filename, 'wb') as f:
+            pickle.dump(raw_words, f)
+
+    with open(corpus_filename, 'rb') as f:
+        raw_words = pickle.load(f)
+        CORPUS = [w.lower() for w in raw_words if w.isalpha()]
+    
+    return CORPUS
 
 def main():
     args = parseArgs()
@@ -98,13 +128,14 @@ def main():
         print(('Unrecognized model:', args.model))
         sys.exit(1)
 
-    corpus = args.text_corpus or 'leo-will.txt'
+    corpus_name = args.text_corpus or 'brown'
+    set_up_corpus(corpus_name)
 
-    sys.stdout.write('Training language cost functions [corpus: %s]... ' % corpus)
+    sys.stdout.write('Training language cost functions [corpus: %s]... ' % corpus_name)
     sys.stdout.flush()
 
-    unigramCost, bigramCost = wordsegUtil.makeLanguageModels(corpus)
-    possibleFills = wordsegUtil.makeInverseRemovalDictionary(corpus, 'aeiou')
+    unigramCost, bigramCost = wordsegUtil.makeLanguageModels(CORPUS)
+    possibleFills = wordsegUtil.makeInverseRemovalDictionary(CORPUS, 'aeiou')
 
     print('Done!')
     print('')

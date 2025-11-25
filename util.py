@@ -151,3 +151,4 @@ class GridSearchProblem(SearchProblem):
         if y - 1 >= 0: results.append(('West', (x, y - 1), 2))
         if y + 1 < self.size: results.append(('East', (x, y + 1), 1))
         return results
+
