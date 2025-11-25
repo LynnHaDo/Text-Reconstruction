@@ -36,9 +36,6 @@ function fixSelection(mode) {
     ui.alert('Selection is empty.');
     return;
   }
-
-  // Show a "working" toast
-  doc.setCursor(doc.getCursor()); 
   
   try {
     const payload = {
