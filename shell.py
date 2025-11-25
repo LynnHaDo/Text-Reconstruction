@@ -6,10 +6,7 @@ import wordsegUtil
 import pickle
 import nltk
 from nltk.corpus import webtext, brown
-
-CORPUS_DIR = "corpus"
-BROWN_CORPUS_FILENAME = 'corpus_brown.pkl'
-WEBTEXT_CORPUS_FILENAME = 'corpus_webtext.pkl'
+from constants import CORPUS_DIR, BROWN_CORPUS_FILENAME, WEBTEXT_CORPUS_FILENAME, DEFAULT_CORPUS_NAME
 
 CORPUS = None
 
@@ -103,10 +100,10 @@ def repl(unigramCost, bigramCost, possibleFills, command=None):
 def set_up_corpus(corpus_name: str):
     if corpus_name == 'webtext':
         corpus_filename = os.path.join(CORPUS_DIR, WEBTEXT_CORPUS_FILENAME)
-        raw_words = webtext.words()
+        raw_words = list(webtext.words())
     else:
         corpus_filename = os.path.join(CORPUS_DIR, BROWN_CORPUS_FILENAME)
-        raw_words = brown.words()
+        raw_words = list(brown.words())
 
     nltk.download(corpus_name)
     
@@ -117,7 +114,7 @@ def set_up_corpus(corpus_name: str):
             pickle.dump(raw_words, f)
 
     with open(corpus_filename, 'rb') as f:
-        raw_words = pickle.load(f)
+        raw_words = list(pickle.load(f))
         CORPUS = [w.lower() for w in raw_words if w.isalpha()]
     
     return CORPUS
@@ -128,7 +125,7 @@ def main():
         print(('Unrecognized model:', args.model))
         sys.exit(1)
 
-    corpus_name = args.text_corpus or 'brown'
+    corpus_name = args.text_corpus or DEFAULT_CORPUS_NAME
     set_up_corpus(corpus_name)
 
     sys.stdout.write('Training language cost functions [corpus: %s]... ' % corpus_name)
