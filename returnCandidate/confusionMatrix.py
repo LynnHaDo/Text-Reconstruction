@@ -7,6 +7,7 @@ Build 4 confusion matrices:
 using from this link of corpora of misspellings: https://titan.dcs.bbk.ac.uk/~ROGER/missp.dat
 """
 from collections import defaultdict
+import re
 
 def parse_birkbeck(path="missp.dat"):
     """
@@ -26,6 +27,7 @@ def parse_birkbeck(path="missp.dat"):
                 pair_words.append((correct_word, wrong_word))
     return pair_words 
 
+
 def get_edit_type(correct_word, wrong_word):
     """
     Return the edit type: 
@@ -35,6 +37,14 @@ def get_edit_type(correct_word, wrong_word):
     - "trans", first_char, second_char
     """
     m, n = len(correct_word), len(wrong_word)
+    # edge case: skip all > 1-edit distance words
+    if abs(m - n) > 1:
+        return None
+    
+    # remove punctuation
+    correct_word = re.sub(r'[^a-z]', '', correct_word.lower())
+    wrong_word   = re.sub(r'[^a-z]', '', wrong_word.lower())
+
     correct_ptr = wrong_ptr = 0
     while correct_ptr < m and wrong_ptr < n and correct_word[correct_ptr] == wrong_word[wrong_ptr]:
         correct_ptr += 1
@@ -64,7 +74,6 @@ def get_edit_type(correct_word, wrong_word):
         # substitue 
         return ("sub", correct_word[correct_ptr], wrong_word[wrong_ptr])
     return None
-# print(get_edit_type("associate", "associate"))
 
 del_matrix = defaultdict(lambda: defaultdict(int))
 trans_matrix = defaultdict(lambda: defaultdict(int))
@@ -96,4 +105,3 @@ def build_confusion_matrix(correct_word, wrong_word):
 pairs = parse_birkbeck("missp.dat")
 for correct, wrong in pairs: 
     build_confusion_matrix(correct, wrong)
-# print(sub_matrix)
