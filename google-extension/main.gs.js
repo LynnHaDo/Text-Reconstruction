@@ -29,8 +29,24 @@ function fixSelection(mode) {
   const elements = selection.getRangeElements();
   
   // Process the first selected element
-  const element = elements[0].getElement();
-  const text = element.getText();
+  const rangeElement = elements[0]
+  const element = rangeElement.getElement();
+  
+  if (element.getType() !== DocumentApp.ElementType.TEXT) {
+    ui.alert('Please select valid text.');
+    return;
+  }
+
+  // Calculate position
+  let startOffset = 0;
+  let endOffsetInclusive = element.getText().length - 1;
+
+  if (rangeElement.isPartial()) {
+    startOffset = rangeElement.getStartOffset();
+    endOffsetInclusive = rangeElement.getEndOffsetInclusive();
+  }
+
+  const text = element.getText().substring(startOffset, endOffsetInclusive + 1);
 
   if (!text.trim()) {
     ui.alert('Selection is empty.');
@@ -55,9 +71,8 @@ function fixSelection(mode) {
 
     if (json.corrected) {
       // Replace the text in the document
-      if (element.editAsText) {
-          element.editAsText().setText(json.corrected);
-      }
+      element.deleteText(startOffset, endOffsetInclusive);
+      element.insertText(startOffset, json.corrected);
     } else {
       ui.alert('Error: ' + json.error);
     }
