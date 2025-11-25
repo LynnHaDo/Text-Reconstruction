@@ -1,6 +1,7 @@
 import collections
 import math
 from typing import Set, Callable, List, Iterable, Iterator, Tuple
+import nltk
 
 SENTENCE_BEGIN = '-BEGIN-'
 
@@ -30,31 +31,23 @@ def words(l: str) -> List[str]:
 ############################################################
 # Make an n-gram model of words in text from a corpus.
 
-def makeLanguageModels(path: str) -> Tuple[Callable[[str], float], Callable[[str, str], float]]:
-    unigramCounts = collections.Counter()
-    totalCounts = 0
-    bigramCounts = collections.Counter()
-    bitotalCounts = collections.Counter()
+def makeLanguageModels(word_list: Iterable[str],) -> Tuple[Callable[[str], float], Callable[[str, str], float]]:
+    """
+    Params:
+    * word_list: list of (cleaned) words in the corpus
+    
+    Returns:
+    * unigramCost and bigramModel
+    """
+    # Use NLTK to count frequencies
+    unigramCounts = nltk.FreqDist(word_list) # map a word to frequency
+    bigramCounts = nltk.FreqDist(nltk.bigrams(word_list)) # map a pair to frequency
+    bitotalCounts = nltk.ConditionalFreqDist(nltk.bigrams(word_list)) # map a word to count of bigrams starting with word
+    
+    totalCounts = len(word_list)
     VOCAB_SIZE = 600000
     LONG_WORD_THRESHOLD = 5
     LENGTH_DISCOUNT = 0.15
-
-    def bigramWindow(win: str) -> Tuple[str, str]:
-        assert len(win) in [1, 2]
-        if len(win) == 1:
-            return SENTENCE_BEGIN, win[0]
-        else:
-            return tuple(win)
-
-    with open(path, 'r') as f:
-        for l in f:
-            ws = words(cleanLine(l))
-            unigrams = [x[0] for x in sliding(ws, 1)]
-            bigrams = [bigramWindow(x) for x in sliding(ws, 2)]
-            totalCounts += len(unigrams)
-            unigramCounts.update(unigrams)
-            bigramCounts.update(bigrams)
-            bitotalCounts.update([x[0] for x in bigrams])
 
     def unigramCost(x: str) -> float:
         if x not in unigramCounts:
@@ -64,7 +57,7 @@ def makeLanguageModels(path: str) -> Tuple[Callable[[str], float], Callable[[str
             return math.log(totalCounts) - math.log(unigramCounts[x])
 
     def bigramModel(a: str, b: str) -> float:
-        return math.log(bitotalCounts[a] + VOCAB_SIZE) - math.log(bigramCounts[(a, b)] + 1)
+        return math.log(bitotalCounts[a].N() + VOCAB_SIZE) - math.log(bigramCounts[(a, b)] + 1)
 
     return unigramCost, bigramModel
 
@@ -94,13 +87,18 @@ def smoothUnigramAndBigram(unigramCost: Callable[[str], float], bigramModel: Cal
 # Make a map for inverse lookup of words without vowels -> possible
 # full words
 
-def makeInverseRemovalDictionary(path: str, removeChars: Iterable[str]) -> Callable[[str], Set[str]]:
+def makeInverseRemovalDictionary(word_list: Iterable[str], removeChars: Iterable[str]) -> Callable[[str], Set[str]]:
+    """
+    Params:
+    * word_list: list of (cleaned) words in the corpus
+    
+    Returns:
+    * a mapping from a word to valid filled words
+    """
     wordsRemovedToFull = collections.defaultdict(set)
 
-    with open(path, 'r') as f:
-        for l in f:
-            for w in words(cleanLine(l)):
-                wordsRemovedToFull[removeAll(w, removeChars)].add(w)
+    for word in word_list:
+        wordsRemovedToFull[removeAll(word, removeChars)].add(word)
 
     wordsRemovedToFull = dict(wordsRemovedToFull)
 
