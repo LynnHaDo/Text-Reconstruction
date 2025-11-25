@@ -20,3 +20,27 @@ pip install -r requirements.txt
 ```
 python server.py
 ```
+
+## Steps to set up client
+
+1. Install clasp
+
+```
+npm install -g @google/clasp
+```
+
+2. Navigate to `google-extension`
+
+```
+cd google-extension
+```
+
+3. Push/pull
+
+* Upload changes to Google Docs
+* Pull changes made in the Browser
+
+```
+clasp push
+clasp pull
+```
