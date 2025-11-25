@@ -2,6 +2,22 @@ from collections import Counter
 from confusionMatrix import get_edit_type, del_matrix, sub_matrix, trans_matrix, insert_matrix
 from calcWordProb import calcWordProb
 import math
+import sys
+import os
+
+# Add project root directory to Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from wordsegUtil import makeLanguageModels
+import nltk
+from nltk.corpus import webtext
+
+# Download on first run
+nltk.download("webtext")
+
+# Load corpus and clean it:
+CORPUS = [w.lower() for w in webtext.words() if w.isalpha()]
+
 
 cnt_char = Counter()
 cnt_pair = Counter()
@@ -16,7 +32,7 @@ def calcDenom(pair_words):
 def calcProbGivenCorrectWord(correct_word, wrong_word):
     edit_type = get_edit_type(correct_word, wrong_word)
     if edit_type is None:
-        return float('-inf')
+        return 0.0
     op = edit_type[0]
     
     if op == 'del':
@@ -33,7 +49,7 @@ def calcProbGivenCorrectWord(correct_word, wrong_word):
     
     elif op == 'sub':
         _, correct_char, wrong_char = edit_type
-        num = sub_matrix[wrong_char][correct_char] + 1
+        num = sub_matrix[correct_char][wrong_char] + 1
         denom = cnt_char[correct_char] + 1
         return num / denom 
     
@@ -42,21 +58,59 @@ def calcProbGivenCorrectWord(correct_word, wrong_word):
         num = trans_matrix[correct_char][wrong_char] + 1
         denom = cnt_pair[correct_char + wrong_char] + 1
         return num / denom
-    return float('-inf')
+    return 0.0
 
-def calcFinalScore(wrong_word, candidate_list, freq_map):
+# def calcFinalScore(wrong_word, candidate_list, freq_map):
+#     max_score = float('-inf')
+#     best_candidate = []
+#     for word in candidate_list:
+#         word_prob = calcWordProb(word, freq_map)
+#         bayes_prob = math.log(calcProbGivenCorrectWord(word, wrong_word))
+#         curr_score = word_prob + bayes_prob 
+#         if curr_score > max_score:
+#             max_score = curr_score 
+#             best_candidate.append(word)
+#         elif curr_score == max_score:
+#             best_candidate.append(word)
+#     return best_candidate
+unigramCost, bigramCost, freq_map = makeLanguageModels(CORPUS)
+# print("freq_map", freq_map)
+# print(calcFinalScore("acress", ["access", "actress", "across", "acres", "caress"], freq_map))
+
+def calcFinalScore(sentence, wrong_word, candidate_list, freq_map):
+    words = sentence.split()
+    idx = words.index(wrong_word)
+    prev_word = words[idx - 1] if idx > 0 else ""
+    next_word = words[idx + 1] if idx < len(words) - 1 else ""
+    best_candidate = [] 
     max_score = float('-inf')
-    best_candidate = []
+    lambda_mix = 0.3
     for word in candidate_list:
+        print(word, get_edit_type(word, wrong_word))
         word_prob = calcWordProb(word, freq_map)
-        bayes_prob = math.log(calcProbGivenCorrectWord(word, wrong_word))
-        curr_score = word_prob + bayes_prob 
-        if curr_score > max_score:
-            max_score = curr_score 
-            best_candidate.append(word)
-        elif curr_score == max_score:
-            best_candidate.append(word)
-    return best_candidate
-vocab = {"actress": 10, "across": 100}
-print(calcFinalScore("acress", ["actress", "across"], vocab))
+        em_prob = calcProbGivenCorrectWord(word, wrong_word)
 
+        bayes_prob = math.log(em_prob) if em_prob > 0 else -1e9
+        prev_prob = -bigramCost(prev_word, word) if prev_word else 0
+        left_lm = lambda_mix * (-unigramCost(word)) + (1 - lambda_mix) * prev_prob
+        right_prob = -bigramCost(word, next_word) if next_word else 0
+        right_lm = lambda_mix * (-unigramCost(next_word)) + (1 - lambda_mix) * right_prob
+        print("====", word, "====")
+        # print("left_lm  =", prev_prob)
+        print("left_lm  =", left_lm)
+
+        # print("right_lm =", right_prob)
+        print("right_lm =", right_lm)
+
+        print("error_lm =", bayes_prob)
+        # score =  prev_prob + right_prob
+        score = right_lm + left_lm
+        print("curr_score, word", score, word)
+        if score > max_score:
+            max_score = score 
+            best_candidate = word
+        # elif score == max_score:
+        #     best_candidate.append(word)
+    return best_candidate
+sentence = "He finaly admitted he was wrong"
+print(calcFinalScore(sentence, "finaly",['finale', 'final', 'finals', 'finely', 'finally'], freq_map))
