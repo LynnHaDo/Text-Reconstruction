@@ -98,23 +98,32 @@ def repl(unigramCost, bigramCost, possibleFills, command=None):
         print('')
 
 def set_up_corpus(corpus_name: str):
+    # Define the corpus path
     if corpus_name == 'webtext':
         corpus_filename = os.path.join(CORPUS_DIR, WEBTEXT_CORPUS_FILENAME)
-        raw_words = list(webtext.words())
     else:
         corpus_filename = os.path.join(CORPUS_DIR, BROWN_CORPUS_FILENAME)
-        raw_words = list(brown.words())
-
+        
+    # Check if it exists
+    if os.path.exists(corpus_filename):
+        print(f"Loading cached corpus from {corpus_filename}...")
+        with open(corpus_filename, 'rb') as f:
+            raw_words = list(pickle.load(f))
+            CORPUS = [w.lower() for w in raw_words if w.isalpha()]
+            return CORPUS
+        
+    print(f"Corpus is not found in {corpus_filename}. Donwloading {corpus_name} from NLTK...")
     nltk.download(corpus_name)
     
-    if not os.path.exists(corpus_filename):
-        print(f"Saving to {corpus_filename}...")
-        os.makedirs(CORPUS_DIR, exist_ok=True)
-        with open(corpus_filename, 'wb') as f:
-            pickle.dump(raw_words, f)
-
-    with open(corpus_filename, 'rb') as f:
-        raw_words = list(pickle.load(f))
+    if corpus_name == "webtext":
+        raw_words = list(webtext.words())
+    else:
+        raw_words = list(brown.words())
+    
+    # Save it so that we don't need to download it next time
+    os.makedirs(CORPUS_DIR, exist_ok=True)
+    with open(corpus_filename, 'wb') as f:
+        pickle.dump(raw_words, f)
         CORPUS = [w.lower() for w in raw_words if w.isalpha()]
     
     return CORPUS
