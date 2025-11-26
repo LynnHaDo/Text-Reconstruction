@@ -3,7 +3,8 @@ const SERVER_API_KEY = "SERVER_TEXT_PROCESSING_URL"
 const TEXT_PROCESSING_MODES = {
     SEGMENT: "seg",
     INSERT: "ins",
-    BOTH: "both"
+    BOTH: "both",
+    AUTOCORRECT: "autocorrect"
 }
 
 const APP_CONFIG = {

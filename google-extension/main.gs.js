@@ -8,6 +8,7 @@ function onOpen() {
         .addItem('Joint (Seg + Ins)', 'runFixBoth')
         .addItem('Segmentation Only', 'runFixSeg')
         .addItem('Insertion (vowels) Only', 'runFixIns')
+        .addItem('Autocorrect', "autoCorrect")
       )
       .addToUi();
 }
@@ -15,6 +16,7 @@ function onOpen() {
 function runFixBoth() { fixSelection(TEXT_PROCESSING_MODES.BOTH) }
 function runFixSeg() { fixSelection(TEXT_PROCESSING_MODES.SEGMENT) }
 function runFixIns() { fixSelection(TEXT_PROCESSING_MODES.INSERT) }
+function autoCorrect(){fixSelection(TEXT_PROCESSING_MODES.AUTOCORRECT)}
 
 function fixSelection(mode) {
   const doc = DocumentApp.getActiveDocument();
@@ -47,6 +49,10 @@ function fixSelection(mode) {
   }
 
   const text = element.getText().substring(startOffset, endOffsetInclusive + 1);
+  const paragraph = element.getParent().asParagraph();
+  const paragraphText = paragraph.getText();
+
+  const sentence = paragraphText;
 
   if (!text.trim()) {
     ui.alert('Selection is empty.');
@@ -56,7 +62,8 @@ function fixSelection(mode) {
   try {
     const payload = {
       "text": text,
-      "mode": mode
+      "mode": mode,
+      "sentence": sentence
     };
 
     const options = {
