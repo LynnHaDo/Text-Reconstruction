@@ -5,6 +5,8 @@ import submission
 import wordsegUtil
 from constants import DEFAULT_CORPUS_NAME, TEXT_PROCESSING_ENDPOINT
 from shell import set_up_corpus
+from candidateGeneratorUtil import CandidateGeneratorUtil
+from calcScore import AutoCorrect
 
 app = Flask(__name__)
 CORS(app)
@@ -17,9 +19,15 @@ possibleFills = None
 # Initializing models and corpus
 print("Initializing server and loading models...")
 CORPUS = set_up_corpus(DEFAULT_CORPUS_NAME)
-unigramCost, bigramCost = wordsegUtil.makeLanguageModels(CORPUS)
+unigramCost, bigramCost, _ = wordsegUtil.makeLanguageModels(CORPUS)
 possibleFills = wordsegUtil.makeInverseRemovalDictionary(CORPUS, 'aeiou')
 print("Models Loaded! Server is ready.")
+
+print("Loading autocorrect...")
+auto_correct = AutoCorrect(CORPUS, "missp.dat")
+print("Auto correct is ready")
+
+candidate_generator = CandidateGeneratorUtil(DEFAULT_CORPUS_NAME)
 
 # API endpoints
 @app.route(TEXT_PROCESSING_ENDPOINT, methods=['POST'])
@@ -27,11 +35,12 @@ def process_text():
     data = request.json
     text = data.get('text', '')
     mode = data.get('mode', 'both') # seg, ins, or both
-    
+    sentence = data.get('sentence', "")
     if not text:
         return jsonify({'error': 'No text provided.'}), 400
     
     # Clean the text
+    # user boi den
     cleanedText = wordsegUtil.cleanLine(text)
     
     result = ""
@@ -44,6 +53,10 @@ def process_text():
         case 'ins':
             ws = [wordsegUtil.removeAll(w, 'aeiou') for w in wordsegUtil.words(cleanedText)]
             result = submission.insertVowels(ws, bigramCost, possibleFills)
+        case 'autocorrect':
+            candidate_list = candidate_generator.generate_one_distance_candidates(cleanedText)
+            result = auto_correct.correct(sentence, cleanedText, candidate_list)
+
         case _: # default to both
             smoothCost = wordsegUtil.smoothUnigramAndBigram(unigramCost, bigramCost, 0.2)
             parts = [wordsegUtil.removeAll(w, 'aeiou') for w in wordsegUtil.words(cleanedText)]
@@ -56,5 +69,5 @@ def process_text():
     return jsonify({'original': text, 'corrected': result})
 
 if __name__ == "__main__":
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 5001))
     app.run(host='0.0.0.0', port = port)
