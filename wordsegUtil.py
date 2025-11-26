@@ -31,13 +31,14 @@ def words(l: str) -> List[str]:
 ############################################################
 # Make an n-gram model of words in text from a corpus.
 
-def makeLanguageModels(word_list: Iterable[str],) -> Tuple[Callable[[str], float], Callable[[str, str], float]]:
+def makeLanguageModels(word_list: Iterable[str],):
     """
     Params:
     * word_list: list of (cleaned) words in the corpus
     
     Returns:
     * unigramCost and bigramModel
+    * unigramCounts
     """
     # Use NLTK to count frequencies
     unigramCounts = nltk.FreqDist(word_list) # map a word to frequency
@@ -59,7 +60,7 @@ def makeLanguageModels(word_list: Iterable[str],) -> Tuple[Callable[[str], float
     def bigramModel(a: str, b: str) -> float:
         return math.log(bitotalCounts[a].N() + VOCAB_SIZE) - math.log(bigramCounts[(a, b)] + 1)
 
-    return unigramCost, bigramModel
+    return unigramCost, bigramModel, unigramCounts
 
 
 def logSumExp(x: float, y: float) -> float:

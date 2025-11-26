@@ -6,7 +6,10 @@ import wordsegUtil
 import pickle
 import nltk
 from nltk.corpus import webtext, brown
-from constants import CORPUS_DIR, BROWN_CORPUS_FILENAME, WEBTEXT_CORPUS_FILENAME, DEFAULT_CORPUS_NAME
+
+CORPUS_DIR = "corpus"
+BROWN_CORPUS_FILENAME = 'corpus_brown.pkl'
+WEBTEXT_CORPUS_FILENAME = 'corpus_webtext.pkl'
 
 CORPUS = None
 
@@ -98,32 +101,23 @@ def repl(unigramCost, bigramCost, possibleFills, command=None):
         print('')
 
 def set_up_corpus(corpus_name: str):
-    # Define the corpus path
     if corpus_name == 'webtext':
         corpus_filename = os.path.join(CORPUS_DIR, WEBTEXT_CORPUS_FILENAME)
+        raw_words = webtext.words()
     else:
         corpus_filename = os.path.join(CORPUS_DIR, BROWN_CORPUS_FILENAME)
-        
-    # Check if it exists
-    if os.path.exists(corpus_filename):
-        print(f"Loading cached corpus from {corpus_filename}...")
-        with open(corpus_filename, 'rb') as f:
-            raw_words = list(pickle.load(f))
-            CORPUS = [w.lower() for w in raw_words if w.isalpha()]
-            return CORPUS
-        
-    print(f"Corpus is not found in {corpus_filename}. Donwloading {corpus_name} from NLTK...")
+        raw_words = brown.words()
+
     nltk.download(corpus_name)
     
-    if corpus_name == "webtext":
-        raw_words = list(webtext.words())
-    else:
-        raw_words = list(brown.words())
-    
-    # Save it so that we don't need to download it next time
-    os.makedirs(CORPUS_DIR, exist_ok=True)
-    with open(corpus_filename, 'wb') as f:
-        pickle.dump(raw_words, f)
+    if not os.path.exists(corpus_filename):
+        print(f"Saving to {corpus_filename}...")
+        os.makedirs(CORPUS_DIR, exist_ok=True)
+        with open(corpus_filename, 'wb') as f:
+            pickle.dump(raw_words, f)
+
+    with open(corpus_filename, 'rb') as f:
+        raw_words = pickle.load(f)
         CORPUS = [w.lower() for w in raw_words if w.isalpha()]
     
     return CORPUS
@@ -134,7 +128,7 @@ def main():
         print(('Unrecognized model:', args.model))
         sys.exit(1)
 
-    corpus_name = args.text_corpus or DEFAULT_CORPUS_NAME
+    corpus_name = args.text_corpus or 'brown'
     set_up_corpus(corpus_name)
 
     sys.stdout.write('Training language cost functions [corpus: %s]... ' % corpus_name)
