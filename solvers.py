@@ -1,7 +1,8 @@
-from typing import Callable, List, Set
+from typing import Callable, List, Set, Tuple
 
 import shell
 import util
+from util import AutocompleteTrie
 import wordsegUtil
 
 
@@ -135,6 +136,35 @@ def segmentAndInsert(query: str, bigramCost: Callable[[str, str], float],
         return query # cannot segment this query
     return ' '.join(ucs.actions) # minimum-cost path is the segmented words with lowest bigram cost
 
+def autocomplete(query: str,
+                 previous_word: str,
+                 trie: AutocompleteTrie,
+                 bigramCost: Callable[[str, str], float]) -> List[Tuple[str, float]]:
+    """
+    Given a partial word (query), returns top 5 most likely word
+    based on the previous word.
+    
+    :param query: a partial word
+    :type query: str
+    :param previous_word: word before query word
+    :type previous_word: str
+    :param trie: trie with all words in corpus
+    :type trie: AutocompleteTrie
+    :param bigramCost: function that outputs the cost for 2 consecutive words
+    :type bigramCost: Callable[[str, str], float]
+    :return: list of top 5 most likely words and associated cost
+    :rtype: List[Tuple[str, float]]
+    """
+    candidates = trie.search_prefix(query)
+    
+    ranked_sugesstions = []
+    for word in candidates:
+        cost = bigramCost(previous_word, word)
+        ranked_sugesstions.append((word, cost))
+    
+    # Sort by cost (lower -> greater)
+    ranked_sugesstions.sort(key=lambda x: x[1])
+    return ranked_sugesstions[:5]
 
 ############################################################
 
