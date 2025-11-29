@@ -1,5 +1,5 @@
 from typing import Set
-from shell import set_up_corpus
+from util import set_up_corpus
 
 LOWER_CASE_RANGE = range(97, 123)
 

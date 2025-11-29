@@ -1,10 +1,10 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
-import submission
+import solvers
 import wordsegUtil
 from constants import DEFAULT_CORPUS_NAME, TEXT_PROCESSING_ENDPOINT
-from shell import set_up_corpus
+from util import set_up_corpus
 from candidateGeneratorUtil import CandidateGeneratorUtil
 from calcScore import AutoCorrect
 
@@ -49,10 +49,10 @@ def process_text():
         case 'seg':
             parts = wordsegUtil.words(cleanedText)
             # Apply segmentWords to each part
-            result = ' '.join(submission.segmentWords(part, unigramCost) for part in parts)
+            result = ' '.join(solvers.segmentWords(part, unigramCost) for part in parts)
         case 'ins':
             ws = [wordsegUtil.removeAll(w, 'aeiou') for w in wordsegUtil.words(cleanedText)]
-            result = submission.insertVowels(ws, bigramCost, possibleFills)
+            result = solvers.insertVowels(ws, bigramCost, possibleFills)
         case 'autocorrect':
             candidate_list = candidate_generator.generate_one_distance_candidates(cleanedText)
             result = auto_correct.correct(sentence, cleanedText, candidate_list)
@@ -62,7 +62,7 @@ def process_text():
             parts = [wordsegUtil.removeAll(w, 'aeiou') for w in wordsegUtil.words(cleanedText)]
             # Apply segmentAndInsert
             result = ' '.join(
-                submission.segmentAndInsert(part, smoothCost, possibleFills)
+                solvers.segmentAndInsert(part, smoothCost, possibleFills)
                 for part in parts
             )
     

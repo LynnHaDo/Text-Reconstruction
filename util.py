@@ -1,6 +1,49 @@
 import heapq
 from typing import Callable, Iterable, Set, Tuple, List
+import pickle
+import nltk
+from nltk.corpus import webtext, brown
+from constants import CORPUS_DIR, BROWN_CORPUS_FILENAME, WEBTEXT_CORPUS_FILENAME, DEFAULT_CORPUS_NAME
+import os
 
+CORPUS = None
+
+def set_up_corpus(corpus_name: str):
+    """
+    Set up corpus given the name
+    
+    :param corpus_name: Name of corpus (brown or webtext) from nltk
+    :type corpus_name: str
+    """
+    # Define the corpus path
+    if corpus_name == 'webtext':
+        corpus_filename = os.path.join(CORPUS_DIR, WEBTEXT_CORPUS_FILENAME)
+    else:
+        corpus_filename = os.path.join(CORPUS_DIR, BROWN_CORPUS_FILENAME)
+        
+    # Check if it exists
+    if os.path.exists(corpus_filename):
+        print(f"Loading cached corpus from {corpus_filename}...")
+        with open(corpus_filename, 'rb') as f:
+            raw_words = list(pickle.load(f))
+            CORPUS = [w.lower() for w in raw_words if w.isalpha()]
+            return CORPUS
+        
+    print(f"Corpus is not found in {corpus_filename}. Donwloading {corpus_name} from NLTK...")
+    nltk.download(corpus_name)
+    
+    if corpus_name == "webtext":
+        raw_words = list(webtext.words())
+    else:
+        raw_words = list(brown.words())
+    
+    # Save it so that we don't need to download it next time
+    os.makedirs(CORPUS_DIR, exist_ok=True)
+    with open(corpus_filename, 'wb') as f:
+        pickle.dump(raw_words, f)
+        CORPUS = [w.lower() for w in raw_words if w.isalpha()]
+    
+    return CORPUS
 
 ############################################################
 # Abstract interfaces for search problems and search algorithms.
@@ -25,7 +68,6 @@ class SearchAlgorithm:
     # - self.totalCost: the sum of the costs along the path or None if no valid
     #                   action sequence exists.
     def solve(self, problem: SearchProblem): raise NotImplementedError("Override me")
-
 
 ############################################################
 # Uniform cost search algorithm (Dijkstra's algorithm).

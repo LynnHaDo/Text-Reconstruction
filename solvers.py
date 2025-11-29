@@ -6,7 +6,7 @@ import wordsegUtil
 
 
 ############################################################
-# Problem 1b: Solve the segmentation problem under a unigram model
+# Solve the segmentation problem under a unigram model
 
 class SegmentationProblem(util.SearchProblem):
     def __init__(self, query: str, unigramCost: Callable[[str], float]):
@@ -43,7 +43,7 @@ def segmentWords(query: str, unigramCost: Callable[[str], float]) -> str:
 
 
 ############################################################
-# Problem 2b: Solve the vowel insertion problem under a bigram cost
+# Solve the vowel insertion problem under a bigram cost
 
 class VowelInsertionProblem(util.SearchProblem):
     def __init__(self, queryWords: List[str], bigramCost: Callable[[str, str], float],
@@ -89,7 +89,7 @@ def insertVowels(queryWords: List[str], bigramCost: Callable[[str, str], float],
 
 
 ############################################################
-# Problem 3b: Solve the joint segmentation-and-insertion problem
+# Solve the joint segmentation-and-insertion problem
 
 class JointSegmentationInsertionProblem(util.SearchProblem):
     def __init__(self, query: str, bigramCost: Callable[[str, str], float],
