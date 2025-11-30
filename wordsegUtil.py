@@ -46,19 +46,18 @@ def makeLanguageModels(word_list: Iterable[str],):
     bitotalCounts = nltk.ConditionalFreqDist(nltk.bigrams(word_list)) # map a word to count of bigrams starting with word
     
     totalCounts = len(word_list)
-    VOCAB_SIZE = 600000
     LONG_WORD_THRESHOLD = 5
     LENGTH_DISCOUNT = 0.15
 
     def unigramCost(x: str) -> float:
         if x not in unigramCounts:
             length = max(LONG_WORD_THRESHOLD, len(x))
-            return -(length * math.log(LENGTH_DISCOUNT) + math.log(1.0) - math.log(VOCAB_SIZE))
+            return -(length * math.log(LENGTH_DISCOUNT) + math.log(1.0) - math.log(totalCounts))
         else:
             return math.log(totalCounts) - math.log(unigramCounts[x])
 
     def bigramModel(a: str, b: str) -> float:
-        return math.log(bitotalCounts[a].N() + VOCAB_SIZE) - math.log(bigramCounts[(a, b)] + 1)
+        return math.log(bitotalCounts[a].N() + totalCounts) - math.log(bigramCounts[(a, b)] + 1)
 
     return unigramCost, bigramModel, unigramCounts
 

@@ -8,12 +8,14 @@ import os
 
 CORPUS = None
 
-def set_up_corpus(corpus_name: str):
+def set_up_corpus(corpus_name: str) -> List[str]:
     """
     Set up corpus given the name
     
     :param corpus_name: Name of corpus (brown or webtext) from nltk
     :type corpus_name: str
+    :return: list of all words in the given corpus
+    :rtype: List[str]
     """
     # Define the corpus path
     if corpus_name == 'webtext':

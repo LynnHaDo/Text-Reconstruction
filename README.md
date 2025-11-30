@@ -1,5 +1,9 @@
 # Autocorrect (and autocomplete) engine
 
+## Configurations
+
+- Python 3.13.9
+
 ## Steps to run server locally
 
 1. Create and activate virtual environment

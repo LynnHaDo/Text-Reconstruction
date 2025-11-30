@@ -7,6 +7,7 @@ from constants import DEFAULT_CORPUS_NAME, AUTOCORRECT_ENDPOINT, AUTOCOMPLETE_EN
 from util import set_up_corpus, make_autocomplete_trie
 from candidateGeneratorUtil import CandidateGeneratorUtil
 from calcScore import AutoCorrect
+from sklearnUtil import NeuralScorer, NeuralTrainer, is_model_present
 
 app = Flask(__name__)
 CORS(app)
@@ -15,6 +16,7 @@ CORS(app)
 unigramCost = None
 bigramCost = None
 possibleFills = None
+sklearnCandidateScorer = None
 
 # Initializing models and corpus
 print("Initializing server and loading models...")
@@ -31,6 +33,15 @@ print("Auto correct is ready")
 print("Loading autocomplete trie...")
 autocomplete_trie = make_autocomplete_trie(CORPUS, unigramCost)
 print("Autocomplete trie is ready!")
+
+print("Checking if scikit-learn classifier model is trained...")
+if not is_model_present():
+    print("Scikit-learn classifier model is not found. Training process starts...")
+    trainer = NeuralTrainer(CORPUS)
+    trainer.train()
+print("Scikit-learn model is ready!")
+sklearnCandidateScorer = NeuralScorer()
+
 
 # API endpoints
 @app.route(AUTOCORRECT_ENDPOINT, methods=['POST'])
@@ -86,15 +97,24 @@ def autocomplete_text():
         # Case 1
         prefix = ""
         previous_word = tokens[-1] if tokens else wordsegUtil.SENTENCE_BEGIN
+        previous_previous_word = tokens[-2] if tokens and len(tokens) >= 2 else wordsegUtil.SENTENCE_BEGIN
     else:
         # Case 2
         prefix = tokens[-1]
         previous_word = tokens[-2] if len(tokens) > 1 else wordsegUtil.SENTENCE_BEGIN
+        previous_previous_word = tokens[-3] if tokens and len(tokens) >= 3 else wordsegUtil.SENTENCE_BEGIN
     
     # Get suggestions
-    suggestions = solvers.autocomplete(prefix, previous_word, autocomplete_trie, bigramCost)
+    # Solution 1: Use bigram cost model 
+    # suggestions = solvers.autocomplete(prefix, previous_word, autocomplete_trie, bigramCost)
     
-    return jsonify({'suggestions': [s[0] for s in suggestions]})
+    # Solution 2: Use neural network
+    suggestions = autocomplete_trie.search_prefix(prefix)
+    ranked_suggestions = sklearnCandidateScorer.get_candidate_costs(previous_word, previous_previous_word, suggestions, bigramCost)
+    ranked_suggestions.sort(key=lambda x: x[1])
+    top_suggestions = [x[0] for x in ranked_suggestions[:5]]
+    
+    return jsonify({'suggestions': top_suggestions})
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5001))
