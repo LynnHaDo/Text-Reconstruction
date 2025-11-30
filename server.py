@@ -87,8 +87,10 @@ def autocomplete_text():
     if not text:
         return jsonify({'suggestions': []})
     
+    # Clean the text
+    cleanedText = wordsegUtil.cleanLine(text)
     # Tokenize 
-    tokens = wordsegUtil.words(text)
+    tokens = wordsegUtil.words(cleanedText)
     
     # There are 2 cases
     # (1) User finished a word. Predict the next word
