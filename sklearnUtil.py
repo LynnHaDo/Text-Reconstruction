@@ -7,6 +7,8 @@ from sklearn.preprocessing import OneHotEncoder
 from constants import ENCODER_FILENAME, MLP_CLASSIFIER_MODEL_FILENAME, MODELS_DIR, VOCAB_TO_IDX_FILENAME
 import numpy as np
 
+from wordsegUtil import SENTENCE_BEGIN
+
 MODEL_FIT_PATH = f"{MODELS_DIR}/{MLP_CLASSIFIER_MODEL_FILENAME}"
 VOCAB_TO_IDX_PATH = f"{MODELS_DIR}/{VOCAB_TO_IDX_FILENAME}"
 ENCODER_PATH = f"{MODELS_DIR}/{ENCODER_FILENAME}"
@@ -25,9 +27,10 @@ class NeuralTrainer:
         :param corpus: list of words available
         :type corpus: List[str]
         """
-        self.vocab = list(set(corpus)) # unique words
+        self.vocab = list(set(corpus)) + [SENTENCE_BEGIN] # unique words
         self.word_to_idx = {word: i for i, word in enumerate(self.vocab)}
-        self.trigrams = list(nltk.ngrams(corpus, 3)) # context (2 words) -> target (1 word)
+        self.corpus = [SENTENCE_BEGIN, SENTENCE_BEGIN] + corpus
+        self.trigrams = list(nltk.ngrams(self.corpus, 3)) # context (2 words) -> target (1 word)
     
     def _prepare_data(self):
         """
@@ -128,11 +131,11 @@ class NeuralScorer:
                         log_prob = all_log_probs[output_idx]
                         cost = -log_prob
                     else:
-                        cost = 15 # Word in trie but neural network didn't learn it
+                        cost = bigramCost(previous_word, word) # Word in trie but neural network didn't learn it
                 except:
-                    cost = 15 
+                    cost = bigramCost(previous_word, word) 
             else:
-                cost = 20
+                cost = bigramCost(previous_word, word)
             results.append((word, cost))
         
         return results
