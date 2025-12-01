@@ -114,7 +114,7 @@ def autocomplete_text():
     suggestions = autocomplete_trie.search_prefix(prefix)
     ranked_suggestions = sklearnCandidateScorer.get_candidate_costs(previous_word, previous_previous_word, suggestions, bigramCost)
     ranked_suggestions.sort(key=lambda x: x[1])
-    top_suggestions = [x[0] for x in suggestions[:5]]
+    top_suggestions = [x[0] for x in ranked_suggestions[:5]]
     
     return jsonify({'suggestions': top_suggestions})
 
