@@ -1,7 +1,7 @@
 import csv
 import requests
 
-API_URL = "http://localhost:5001/process"
+API_URL = "http://localhost:5001/autocorrect"
 TEST_FILEPATH = "autocorrect-tests.csv"
 
 def run_tests():
