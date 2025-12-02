@@ -44,22 +44,30 @@ def makeLanguageModels(word_list: Iterable[str],):
     unigramCounts = nltk.FreqDist(word_list) # map a word to frequency
     bigramCounts = nltk.FreqDist(nltk.bigrams(word_list)) # map a pair to frequency
     bitotalCounts = nltk.ConditionalFreqDist(nltk.bigrams(word_list)) # map a word to count of bigrams starting with word
+    trigramCounts = nltk.FreqDist(nltk.ngrams(word_list, 3))
     
     totalCounts = len(word_list)
+    VOCAB_SIZE = len(unigramCounts)
     LONG_WORD_THRESHOLD = 5
     LENGTH_DISCOUNT = 0.15
 
     def unigramCost(x: str) -> float:
         if x not in unigramCounts:
             length = max(LONG_WORD_THRESHOLD, len(x))
-            return -(length * math.log(LENGTH_DISCOUNT) + math.log(1.0) - math.log(totalCounts))
+            return -(length * math.log(LENGTH_DISCOUNT) + math.log(1.0) - math.log(VOCAB_SIZE))
         else:
             return math.log(totalCounts) - math.log(unigramCounts[x])
 
     def bigramModel(a: str, b: str) -> float:
-        return math.log(bitotalCounts[a].N() + totalCounts) - math.log(bigramCounts[(a, b)] + 1)
+        return math.log(bitotalCounts[a].N() + VOCAB_SIZE) - math.log(bigramCounts[(a, b)] + 1)
 
-    return unigramCost, bigramModel, unigramCounts
+    def trigramModel(a: str, b: str, c: str) -> float:
+        count_prefix = bigramCounts[(a, b)]
+        count_triplet = trigramCounts[(a,b,c)]
+        
+        return math.log(count_prefix + VOCAB_SIZE) - math.log(count_triplet + 1)
+    
+    return unigramCost, bigramModel, unigramCounts, trigramModel
 
 
 def logSumExp(x: float, y: float) -> float:

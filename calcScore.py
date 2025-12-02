@@ -16,7 +16,7 @@ import math
 
 class AutoCorrect:
     def __init__(self, corpus_words, misspell_path="missp.dat"):
-        self.unigramCost, self.bigramCost, self.freq_map = makeLanguageModels(corpus_words)
+        self.unigramCost, self.bigramCost, self.freq_map, _ = makeLanguageModels(corpus_words)
         self.confusion_matrix = ConfusionMatrix()
         self.confusion_matrix.build_confusion_matrix(misspell_path)
 

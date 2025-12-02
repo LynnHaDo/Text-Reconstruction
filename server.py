@@ -21,7 +21,7 @@ sklearnCandidateScorer = None
 # Initializing models and corpus
 print("Initializing server and loading models...")
 CORPUS = set_up_corpus(DEFAULT_CORPUS_NAME)
-unigramCost, bigramCost, _ = wordsegUtil.makeLanguageModels(CORPUS)
+unigramCost, bigramCost, _, trigramCost = wordsegUtil.makeLanguageModels(CORPUS)
 possibleFills = wordsegUtil.makeInverseRemovalDictionary(CORPUS, 'aeiou')
 print("Models Loaded! Server is ready.")
 
@@ -70,7 +70,7 @@ def autocorrect_text():
             candidate_list = candidate_generator.generate_one_distance_candidates(cleanedText)
             # change to different corpus if no word in candidate list 
             if not candidate_list:
-                candidate_generator = CandidateGeneratorUtil("brown" if DEFAULT_CORPUS_NAME == 'webtext' else 'webtext') 
+                candidate_generator = CandidateGeneratorUtil(DEFAULT_CORPUS_NAME) 
                 candidate_list = candidate_generator.generate_one_distance_candidates(cleanedText)
                 
             result = auto_correct.correct(sentence, cleanedText, candidate_list)
@@ -114,11 +114,11 @@ def autocomplete_text():
     
     # Get suggestions
     # Solution 1: Use bigram cost model 
-    # suggestions = solvers.autocomplete(prefix, previous_word, autocomplete_trie, bigramCost)
+    ranked_suggestions_bigram = solvers.autocomplete(prefix, previous_word, autocomplete_trie, bigramCost)
     
     # Solution 2: Use neural network
     suggestions = autocomplete_trie.search_prefix(prefix)
-    ranked_suggestions = sklearnCandidateScorer.get_candidate_costs(previous_word, previous_previous_word, suggestions, bigramCost)
+    ranked_suggestions = sklearnCandidateScorer.get_candidate_costs(previous_word, previous_previous_word, suggestions, trigramCost)    
     ranked_suggestions.sort(key=lambda x: x[1])
     top_suggestions = [x[0] for x in ranked_suggestions[:5]]
     

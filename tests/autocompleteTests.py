@@ -20,7 +20,7 @@ def run_tests():
             response = requests.post(API_URL, json=payload).json()
             suggestions = response.get('suggestions', [])
             
-            # Check if expected is in the top 3 
+            # Check if expected is in the top 5
             if t['expected'].lower() in suggestions:
                 status = "PASS"
                 passing += 1

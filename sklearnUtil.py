@@ -93,7 +93,7 @@ class NeuralScorer:
                             previous_word: str, 
                             previous_previous_word: str,
                             candidates: Set[str],
-                            bigramCost: Callable[[str, str], float]) -> List[tuple[str, float]]:
+                            trigramCost: Callable[[str], float]) -> List[tuple[str, float]]:
         """
         Get the cost of potential next words based on previous word.
         
@@ -104,8 +104,8 @@ class NeuralScorer:
         :type previous_previous_word: str
         :param candidates: Set of candidates for next word to `previous_word`
         :type candidates: Set[str]
-        :param bigramCost: function that outputs the cost for 2 consecutive words
-        :type bigramCost: Callable[[str, str], float]
+        :param trigramCost: function that outputs the cost for  consecutive words
+        :type trigramCost: Callable[[str, str], float]
         :return: List of candidate -> cost tuples
         :rtype: List[tuple[str, float]]
         """
@@ -113,8 +113,9 @@ class NeuralScorer:
         prev_prev_idx = self.word_to_idx.get(previous_previous_word)
         
         if prev_idx is None or prev_prev_idx is None: 
+            print(f"FALLBACK TRIGGERED: '{previous_previous_word}', '{previous_word}'")
             # Word is not found in corpus. Defaults to bigram cost
-            return [(w, bigramCost(previous_word, w)) for w in candidates]
+            return [(w, trigramCost(previous_previous_word, previous_word, w)) for w in candidates]
         
         encoded_input = self.encoder.transform([[prev_prev_idx, prev_idx]]) # transform index into one-hot vector
         all_log_probs = self.model_fit.predict_log_proba(encoded_input)[0]
@@ -131,11 +132,11 @@ class NeuralScorer:
                         log_prob = all_log_probs[output_idx]
                         cost = -log_prob
                     else:
-                        cost = bigramCost(previous_word, word) # Word in trie but neural network didn't learn it
+                        cost = trigramCost(previous_previous_word, previous_word, word) # Word in trie but neural network didn't learn it
                 except:
-                    cost = bigramCost(previous_word, word) 
+                    cost = trigramCost(previous_previous_word, previous_word, word) 
             else:
-                cost = bigramCost(previous_word, word)
+                cost = trigramCost(previous_previous_word, previous_word, word)
             results.append((word, cost))
         
         return results

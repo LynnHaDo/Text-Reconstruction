@@ -2,7 +2,7 @@ import csv
 import requests
 
 API_URL = "http://localhost:5001/autocorrect"
-TEST_FILEPATH = "autocorrect-tests.csv"
+TEST_FILEPATH = "tests/autocorrect-tests.csv"
 
 def run_tests():
     with open(TEST_FILEPATH, 'r') as f:

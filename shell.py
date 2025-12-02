@@ -104,7 +104,7 @@ def main():
     sys.stdout.write('Training language cost functions [corpus: %s]... ' % corpus_name)
     sys.stdout.flush()
 
-    unigramCost, bigramCost = wordsegUtil.makeLanguageModels(corpus)
+    unigramCost, bigramCost, _, trigramCost = wordsegUtil.makeLanguageModels(corpus)
     possibleFills = wordsegUtil.makeInverseRemovalDictionary(corpus, 'aeiou')
 
     print('Done!')

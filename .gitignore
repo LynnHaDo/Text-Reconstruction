@@ -1,3 +1,4 @@
 google-extension/.clasp.json
 __pycache__/
 models/
+.DS_Store
