@@ -15,4 +15,3 @@ class CountWordCorpus:
             for i in range(len(word) - 1):
                 pair = word[i:i + 2]
                 self.cnt_pair[pair] += 1
-    
