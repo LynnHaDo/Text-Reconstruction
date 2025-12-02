@@ -1,8 +1,8 @@
 import csv
 import requests
 
-API_URL = "http://localhost:5001/autocorrect"
-TEST_FILEPATH = "autocorrect-tests.csv"
+API_URL = "http://localhost:5001/autocomplete"
+TEST_FILEPATH = "tests/autocomplete-tests.csv"
 
 def run_tests():
     with open(TEST_FILEPATH, 'r') as f:
@@ -14,18 +14,14 @@ def run_tests():
     print("-" * 90)
 
     for t in tests:
-        payload = {
-            'text': t['text'],
-            'sentence': t['sentence'],
-            'mode': 'autocorrect'
-            }
+        payload = {'text': t['text']}
         
         try:
             response = requests.post(API_URL, json=payload).json()
-            suggestions = response.get('corrected', "")
+            suggestions = response.get('suggestions', [])
             
-            # Check if expected is in the top 3 
-            if t['expected'].lower() == suggestions:
+            # Check if expected is in the top 5
+            if t['expected'].lower() in suggestions:
                 status = "PASS"
                 passing += 1
             else:

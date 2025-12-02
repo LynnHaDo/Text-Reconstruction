@@ -1,14 +1,9 @@
 import argparse
-import submission
+from constants import DEFAULT_CORPUS_NAME
+import solvers
 import sys
-import os
+from util import set_up_corpus
 import wordsegUtil
-import pickle
-import nltk
-from nltk.corpus import webtext, brown
-from constants import CORPUS_DIR, BROWN_CORPUS_FILENAME, WEBTEXT_CORPUS_FILENAME, DEFAULT_CORPUS_NAME
-
-CORPUS = None
 
 def parseArgs():
     p = argparse.ArgumentParser()
@@ -59,14 +54,14 @@ def repl(unigramCost, bigramCost, possibleFills, command=None):
             print(('  Query (seg):', ' '.join(parts)))
             print('')
             print(('  ' + ' '.join(
-                submission.segmentWords(part, unigramCost) for part in parts)))
+                solvers.segmentWords(part, unigramCost) for part in parts)))
 
         elif cmd == 'ins':
             line = wordsegUtil.cleanLine(line)
             ws = [wordsegUtil.removeAll(w, 'aeiou') for w in wordsegUtil.words(line)]
             print(('  Query (ins):', ' '.join(ws)))
             print('')
-            print(('  ' + submission.insertVowels(ws, bigramCost, possibleFills)))
+            print(('  ' + solvers.insertVowels(ws, bigramCost, possibleFills)))
 
         elif cmd == 'both':
             line = wordsegUtil.cleanLine(line)
@@ -75,7 +70,7 @@ def repl(unigramCost, bigramCost, possibleFills, command=None):
             print(('  Query (both):', ' '.join(parts)))
             print('')
             print(('  ' + ' '.join(
-                submission.segmentAndInsert(part, smoothCost, possibleFills)
+                solvers.segmentAndInsert(part, smoothCost, possibleFills)
                 for part in parts
             )))
 
@@ -97,37 +92,6 @@ def repl(unigramCost, bigramCost, possibleFills, command=None):
 
         print('')
 
-def set_up_corpus(corpus_name: str):
-    # Define the corpus path
-    if corpus_name == 'webtext':
-        corpus_filename = os.path.join(CORPUS_DIR, WEBTEXT_CORPUS_FILENAME)
-    else:
-        corpus_filename = os.path.join(CORPUS_DIR, BROWN_CORPUS_FILENAME)
-        
-    # Check if it exists
-    if os.path.exists(corpus_filename):
-        print(f"Loading cached corpus from {corpus_filename}...")
-        with open(corpus_filename, 'rb') as f:
-            raw_words = list(pickle.load(f))
-            CORPUS = [w.lower() for w in raw_words if w.isalpha()]
-            return CORPUS
-        
-    print(f"Corpus is not found in {corpus_filename}. Donwloading {corpus_name} from NLTK...")
-    nltk.download(corpus_name)
-    
-    if corpus_name == "webtext":
-        raw_words = list(webtext.words())
-    else:
-        raw_words = list(brown.words())
-    
-    # Save it so that we don't need to download it next time
-    os.makedirs(CORPUS_DIR, exist_ok=True)
-    with open(corpus_filename, 'wb') as f:
-        pickle.dump(raw_words, f)
-        CORPUS = [w.lower() for w in raw_words if w.isalpha()]
-    
-    return CORPUS
-
 def main():
     args = parseArgs()
     if args.model and args.model not in ['seg', 'ins', 'both']:
@@ -135,13 +99,13 @@ def main():
         sys.exit(1)
 
     corpus_name = args.text_corpus or DEFAULT_CORPUS_NAME
-    set_up_corpus(corpus_name)
+    corpus = set_up_corpus(corpus_name)
 
     sys.stdout.write('Training language cost functions [corpus: %s]... ' % corpus_name)
     sys.stdout.flush()
 
-    unigramCost, bigramCost = wordsegUtil.makeLanguageModels(CORPUS)
-    possibleFills = wordsegUtil.makeInverseRemovalDictionary(CORPUS, 'aeiou')
+    unigramCost, bigramCost, _, trigramCost = wordsegUtil.makeLanguageModels(corpus)
+    possibleFills = wordsegUtil.makeInverseRemovalDictionary(corpus, 'aeiou')
 
     print('Done!')
     print('')

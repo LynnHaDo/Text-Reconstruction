@@ -1,6 +1,51 @@
 import heapq
-from typing import Tuple, List
+from typing import Callable, Iterable, Set, Tuple, List
+import pickle
+import nltk
+from nltk.corpus import webtext, brown
+from constants import CORPUS_DIR, BROWN_CORPUS_FILENAME, WEBTEXT_CORPUS_FILENAME, DEFAULT_CORPUS_NAME
+import os
 
+CORPUS = None
+
+def set_up_corpus(corpus_name: str) -> List[str]:
+    """
+    Set up corpus given the name
+    
+    :param corpus_name: Name of corpus (brown or webtext) from nltk
+    :type corpus_name: str
+    :return: list of all words in the given corpus
+    :rtype: List[str]
+    """
+    # Define the corpus path
+    if corpus_name == 'webtext':
+        corpus_filename = os.path.join(CORPUS_DIR, WEBTEXT_CORPUS_FILENAME)
+    else:
+        corpus_filename = os.path.join(CORPUS_DIR, BROWN_CORPUS_FILENAME)
+        
+    # Check if it exists
+    if os.path.exists(corpus_filename):
+        print(f"Loading cached corpus from {corpus_filename}...")
+        with open(corpus_filename, 'rb') as f:
+            raw_words = list(pickle.load(f))
+            CORPUS = [w.lower() for w in raw_words if w.isalpha()]
+            return CORPUS
+        
+    print(f"Corpus is not found in {corpus_filename}. Donwloading {corpus_name} from NLTK...")
+    nltk.download(corpus_name)
+    
+    if corpus_name == "webtext":
+        raw_words = list(webtext.words())
+    else:
+        raw_words = list(brown.words())
+    
+    # Save it so that we don't need to download it next time
+    os.makedirs(CORPUS_DIR, exist_ok=True)
+    with open(corpus_filename, 'wb') as f:
+        pickle.dump(raw_words, f)
+        CORPUS = [w.lower() for w in raw_words if w.isalpha()]
+    
+    return CORPUS
 
 ############################################################
 # Abstract interfaces for search problems and search algorithms.
@@ -25,7 +70,6 @@ class SearchAlgorithm:
     # - self.totalCost: the sum of the costs along the path or None if no valid
     #                   action sequence exists.
     def solve(self, problem: SearchProblem): raise NotImplementedError("Override me")
-
 
 ############################################################
 # Uniform cost search algorithm (Dijkstra's algorithm).
@@ -115,6 +159,91 @@ class PriorityQueue:
             return state, priority
         return None, None  # Nothing left...
 
+class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.is_word = False 
+        self.cost = float('inf') # unigram cost for better speed
+
+class AutocompleteTrie:
+    def __init__(self):
+        self.root = TrieNode()
+    
+    def insert(self, word: str, cost: float):
+        """
+        Insert a word into the trie
+        
+        :param self: autocomplete trie
+        :param word: word to insert to
+        :type word: str
+        :param cost: unigram cost of the word
+        :type cost: float
+        """
+        node = self.root
+        for char in word:
+            if char not in node.children:
+                node.children[char] = TrieNode()
+            node = node.children[char]
+        node.is_word = True 
+        node.cost = cost
+    
+    def search_prefix(self, prefix: str) -> Set[str]|None:
+        """
+        Retrieves all words starting with prefix
+        
+        :param self: autocomplete trie
+        :param prefix: prefix to search for the remaining word
+        :type prefix: str
+        :return: set of all words starting with the prefix
+        :rtype: Set[str]
+        """
+        node = self.root
+        
+        for char in prefix:
+            if char not in node.children:
+                return None
+            node = node.children[char]
+        
+        # Now node is the last char
+        words = set()
+        self._dfs(node, prefix, words)
+        return words
+    
+    def _dfs(self, node: TrieNode, path: str, results: Set[str]):
+        """
+        Performs dfs from the starting node
+        
+        :param self: autocomplete trie
+        :param node: node to start search from
+        :type node: TrieNode
+        :param path: path/string traversed so far
+        :type path: str
+        :param results: set of strings found so far
+        :type results: Set[str]
+        """
+        if node.is_word:
+            results.add(path)
+        
+        for next_char in node.children:
+            self._dfs(node.children[next_char], path + next_char, results)
+
+def make_autocomplete_trie(word_list: Iterable[str], unigramCost: Callable[[str], float]) -> AutocompleteTrie:
+    """
+    Builds an autocomplete trie
+    
+    :param word_list: list of words in corpus
+    :type word_list: Iterable[str]
+    :param unigramCost: function that takes in word and returns unigram cost
+    :type unigramCost: Callable[[str], float]
+    :return: trie with all words in corpus
+    :rtype: AutocompleteTrie
+    """
+    trie = AutocompleteTrie()
+    print("Building autocomplete trie...")
+    for word in word_list:
+        if word.isalpha():
+            trie.insert(word.lower(), unigramCost(word.lower()))
+    return trie
 
 ############################################################
 # Simple examples of search problems to test your code for Problem 1.

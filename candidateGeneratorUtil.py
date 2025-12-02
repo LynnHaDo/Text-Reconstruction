@@ -1,10 +1,11 @@
 from typing import Set
-from shell import set_up_corpus
+from constants import DEFAULT_CORPUS_NAME
+from util import set_up_corpus
 
 LOWER_CASE_RANGE = range(97, 123)
 
 class CandidateGeneratorUtil:
-    def __init__(self, corpus_name = "brown"):
+    def __init__(self, corpus_name = DEFAULT_CORPUS_NAME):
         self.corpus_name = corpus_name
         self.word_set = set(set_up_corpus(self.corpus_name))
         
