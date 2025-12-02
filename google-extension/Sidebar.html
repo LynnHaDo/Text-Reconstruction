@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Suggestions</title>
+        <style>
+            body {
+                font-family: Arial, Helvetica, sans-serif;
+            }
+        </style>
+    </head>
+    <body>
+        <h3>Top 5 suggestions</h3>
+        <div id="suggestions"></div>
+        <script>
+            google.script.run.withSuccessHandler((suggestions) => {
+            const divContent = document.getElementById("suggestions")
+            divContent.innerHTML = ""
+
+            suggestions.forEach((word) => {
+                const div = document.createElement("div")
+                div.className = "suggestions"
+                div.textContent = word 
+
+                div.onclick = () => {
+                    google.script.run.replaceText(word)
+                }
+
+                divContent.appendChild(div)
+            })
+            }).getSuggestions()
+        </script>
+    </body>
+</html>
