@@ -66,7 +66,13 @@ def autocorrect_text():
             ws = [wordsegUtil.removeAll(w, 'aeiou') for w in wordsegUtil.words(cleanedText)]
             result = solvers.insertVowels(ws, bigramCost, possibleFills)
         case 'autocorrect':
+            candidate_generator = CandidateGeneratorUtil(DEFAULT_CORPUS_NAME)
             candidate_list = candidate_generator.generate_one_distance_candidates(cleanedText)
+            # change to different corpus if no word in candidate list 
+            if not candidate_list:
+                candidate_generator = CandidateGeneratorUtil("brown" if DEFAULT_CORPUS_NAME == 'webtext' else 'webtext') 
+                candidate_list = candidate_generator.generate_one_distance_candidates(cleanedText)
+                
             result = auto_correct.correct(sentence, cleanedText, candidate_list)
         case _: # default to both
             smoothCost = wordsegUtil.smoothUnigramAndBigram(unigramCost, bigramCost, 0.2)
@@ -120,4 +126,4 @@ def autocomplete_text():
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5001))
-    app.run(host='0.0.0.0', port = port)
+    app.run(host='0.0.0.0', port = port, debug=True)
