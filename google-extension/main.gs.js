@@ -9,7 +9,7 @@ const DOC = DocumentApp.getActiveDocument();
 
 function onOpen() {
   UI.createMenu(`${APP_CONFIG.PROJECT_NAME}-v${APP_CONFIG.VERSION}`)
-  .addItem("Show Sidebar", "showSideBar")
+    .addItem("Show Sidebar", "showSideBar")
     .addSubMenu(
       DocumentApp.getUi()
         .createMenu("Fix selection...")
@@ -22,11 +22,10 @@ function onOpen() {
     .addToUi();
 }
 
-function showSideBar(){
-  const htmlOutput = HtmlService
-                       .createHtmlOutputFromFile("Sidebar")
-                       .setTitle('Suggestions');
-UI.showSidebar(htmlOutput);
+function showSideBar() {
+  const htmlOutput =
+    HtmlService.createHtmlOutputFromFile("Sidebar").setTitle("Suggestions");
+  UI.showSidebar(htmlOutput);
 }
 
 function runFixBoth() {
@@ -76,7 +75,12 @@ function getStartAndEndIndices(element, rangeElement) {
   return [startOffset, endOffsetInclusive];
 }
 
-function getTextFromSelectionElement(element, rangeElement, startOffset, endOffsetInclusive) {
+function getTextFromSelectionElement(
+  element,
+  rangeElement,
+  startOffset,
+  endOffsetInclusive
+) {
   if (!element || !rangeElement) {
     UI.alert("Element is null. Please select the valid text.");
     return;
@@ -104,15 +108,22 @@ function fixSelection(mode = APP_CONFIG.DEFAULT_MODE) {
 
   let [element, rangeElement] = selections;
   // Calculate position
-  let [startOffset,
-    endOffsetInclusive] = getStartAndEndIndices(element, rangeElement);
-  let textObject = getTextFromSelectionElement(element, rangeElement, startOffset, endOffsetInclusive);
+  let [startOffset, endOffsetInclusive] = getStartAndEndIndices(
+    element,
+    rangeElement
+  );
+  let textObject = getTextFromSelectionElement(
+    element,
+    rangeElement,
+    startOffset,
+    endOffsetInclusive
+  );
 
   if (textObject == null) {
     return;
   }
 
-  let [text, sentence] = textObject
+  let [text, sentence] = textObject;
 
   try {
     const payload = {
@@ -138,8 +149,11 @@ function fixSelection(mode = APP_CONFIG.DEFAULT_MODE) {
       // Replace the text in the document
       element.deleteText(startOffset, endOffsetInclusive);
       element.insertText(startOffset, json.corrected);
-      const newCursorPosition = DOC.newPosition(element, element.getText().length)
-      DOC.setCursor(newCursorPosition)
+      const newCursorPosition = DOC.newPosition(
+        element,
+        element.getText().length
+      );
+      DOC.setCursor(newCursorPosition);
     } else {
       UI.alert("Error: " + json.error);
     }
@@ -191,7 +205,7 @@ function fixSelection(mode = APP_CONFIG.DEFAULT_MODE) {
 //       const fullWord = json.suggestions[0]
 //       const tokens = sentence.trim().split(/\s/)
 //       const prefix = tokens[tokens.length - 1]
-      
+
 //       if (fullWord.startsWith(prefix)) {
 //         const suffix = fullWord.substring(prefix.length)
 
@@ -215,24 +229,30 @@ function fixSelection(mode = APP_CONFIG.DEFAULT_MODE) {
 //   }
 // }
 
+function getAllTextInDoc() {
+    const body = DOC.getBody();
+    const sentence = body.getText();
+
+    if (!sentence.trim()) {
+        return "";
+    }
+
+    const cleanedSentence = sentence.replace(/[\n\r]/g, '')
+
+    if (sentence.endsWith(" ")) {
+        cleanedSentence = cleanedSentence.trimEnd() + " "
+    }
+
+    return cleanedSentence
+}
+
 function getSuggestions() {
-  let selections = getSelection();
+  const sentence = getAllTextInDoc();
 
-  if (selections == null) {
-    return []
-  }
-
-  let [element, rangeElement] = selections;
-  // Calculate position
-  let [startOffset,
-    endOffsetInclusive] = getStartAndEndIndices(element, rangeElement);
-  let textObject = getTextFromSelectionElement(element, rangeElement, startOffset, endOffsetInclusive);
-
-  if (textObject == null) {
+  if (sentence == "") {
+    UI.alert("Document is blank. Please input some text!");
     return;
   }
-
-  let [_, sentence] = textObject
 
   try {
     const payload = {
@@ -251,29 +271,49 @@ function getSuggestions() {
       options
     );
     const json = JSON.parse(response.getContentText());
-    return json.suggestions || []
-  } catch (err)  {
-    console.log("error getting suggestions", err)
+    return json.suggestions || [];
+  } catch (err) {
+    console.log("error getting suggestions", err);
   }
 }
 
-function replaceText(word){
-  const doc = DocumentApp.getActiveDocument();
-  const selection = doc.getSelection();
+function replaceText(word) {
+  const sentence = getAllTextInDoc();
 
-  if (!selection) return;
+  if (sentence == "") {
+    UI.alert("Document is blank. Please input some text!");
+    return;
+  }
 
-  const rangeElement = selection.getRangeElements()[0];
-  const element = rangeElement.getElement();
-  const start = rangeElement.getStartOffset();
-  const end = rangeElement.getEndOffsetInclusive();
+  let suffix = "";
+  const body = DOC.getBody()
 
-  element.deleteText(start, end);
-  element.insertText(start, word);
+  if (sentence.endsWith(" ")) {
+    // Insert full word
+    suffix = word
+  } else {
+    // Insert partial word
+    let tokens = sentence.trim().split(/\s+/)
+    let prefix = tokens[tokens.length - 1]
 
-  doc.setCursor(doc.newPosition(element, start + word.length));
+    if (word.startsWith(prefix.toLowerCase())) {
+        suffix = word.substring(prefix.length);
+    } else {
+        suffix = " " + word; 
+    }
+  }
+
+  if (suffix.length == 0) {
+      return;
+  }
+
+  const paragraphs = body.getParagraphs();
+  const lastParagraph = paragraphs[paragraphs.length - 1];
+  const lastText = lastParagraph.editAsText();
+  
+  lastText.appendText(suffix);
 }
 
-function refreshSidebarContent(){
-  showSideBar()
+function refreshSidebarContent() {
+  showSideBar();
 }
