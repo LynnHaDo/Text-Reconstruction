@@ -9,7 +9,7 @@ const DOC = DocumentApp.getActiveDocument();
 
 function onOpen() {
   UI.createMenu(`${APP_CONFIG.PROJECT_NAME}-v${APP_CONFIG.VERSION}`)
-  .addItem("Show Sidebar", "showSideBar")
+    .addItem("Show Sidebar", "showSideBar")
     .addSubMenu(
       DocumentApp.getUi()
         .createMenu("Fix selection...")
@@ -22,11 +22,10 @@ function onOpen() {
     .addToUi();
 }
 
-function showSideBar(){
-  const htmlOutput = HtmlService
-                       .createHtmlOutputFromFile("Sidebar")
-                       .setTitle('Suggestions');
-UI.showSidebar(htmlOutput);
+function showSideBar() {
+  const htmlOutput =
+    HtmlService.createHtmlOutputFromFile("Sidebar").setTitle("Suggestions");
+  UI.showSidebar(htmlOutput);
 }
 
 function runFixBoth() {
@@ -76,7 +75,12 @@ function getStartAndEndIndices(element, rangeElement) {
   return [startOffset, endOffsetInclusive];
 }
 
-function getTextFromSelectionElement(element, rangeElement, startOffset, endOffsetInclusive) {
+function getTextFromSelectionElement(
+  element,
+  rangeElement,
+  startOffset,
+  endOffsetInclusive
+) {
   if (!element || !rangeElement) {
     UI.alert("Element is null. Please select the valid text.");
     return;
@@ -104,15 +108,22 @@ function fixSelection(mode = APP_CONFIG.DEFAULT_MODE) {
 
   let [element, rangeElement] = selections;
   // Calculate position
-  let [startOffset,
-    endOffsetInclusive] = getStartAndEndIndices(element, rangeElement);
-  let textObject = getTextFromSelectionElement(element, rangeElement, startOffset, endOffsetInclusive);
+  let [startOffset, endOffsetInclusive] = getStartAndEndIndices(
+    element,
+    rangeElement
+  );
+  let textObject = getTextFromSelectionElement(
+    element,
+    rangeElement,
+    startOffset,
+    endOffsetInclusive
+  );
 
   if (textObject == null) {
     return;
   }
 
-  let [text, sentence] = textObject
+  let [text, sentence] = textObject;
 
   try {
     const payload = {
@@ -138,8 +149,11 @@ function fixSelection(mode = APP_CONFIG.DEFAULT_MODE) {
       // Replace the text in the document
       element.deleteText(startOffset, endOffsetInclusive);
       element.insertText(startOffset, json.corrected);
-      const newCursorPosition = DOC.newPosition(element, element.getText().length)
-      DOC.setCursor(newCursorPosition)
+      const newCursorPosition = DOC.newPosition(
+        element,
+        element.getText().length
+      );
+      DOC.setCursor(newCursorPosition);
     } else {
       UI.alert("Error: " + json.error);
     }
@@ -150,89 +164,30 @@ function fixSelection(mode = APP_CONFIG.DEFAULT_MODE) {
   }
 }
 
-// function completeSelection() {
-//   let selections = getSelection();
+function getTextBeforeCursor() {
+  const body = DOC.getBody();
+    const sentence = body.getText();
 
-//   if (selections == null) {
-//     return;
-//   }
+    if (!sentence.trim()) {
+        return "";
+    }
 
-//   let [element, rangeElement] = selections;
-//   // Calculate position
-//   let [startOffset,
-//     endOffsetInclusive] = getStartAndEndIndices(element, rangeElement);
-//   let textObject = getTextFromSelectionElement(element, rangeElement, startOffset, endOffsetInclusive);
+    let cleanedSentence = sentence.replace(/[\n\r]/g, '')
 
-//   if (textObject == null) {
-//     return;
-//   }
+    if (cleanedSentence.endsWith(" ")) {
+        cleanedSentence = cleanedSentence.trimEnd() + " "
+    }
 
-//   let [_, sentence] = textObject
-
-//   try {
-//     const payload = {
-//       text: sentence,
-//     };
-
-//     const options = {
-//       method: "post",
-//       contentType: "application/json",
-//       payload: JSON.stringify(payload),
-//     };
-
-//     // Call the backend
-//     const response = UrlFetchApp.fetch(
-//       `${API_URL}${AUTOCOMPLETE_ENDPOINT}`,
-//       options
-//     );
-//     const json = JSON.parse(response.getContentText());
-
-//     if (json.suggestions && json.suggestions.length > 0) {
-//       const fullWord = json.suggestions[0]
-//       const tokens = sentence.trim().split(/\s/)
-//       const prefix = tokens[tokens.length - 1]
-      
-//       if (fullWord.startsWith(prefix)) {
-//         const suffix = fullWord.substring(prefix.length)
-
-//         if (suffix.length > 0) {
-//             element.insertText(endOffsetInclusive + 1, suffix)
-//         }
-//       }
-//       else {
-//         element.insertText(endOffsetInclusive + 1, fullWord)
-//       }
-//       const newCursorPosition = DOC.newPosition(element, element.getText().length)
-//       DOC.setCursor(newCursorPosition)
-
-//     } else {
-//       UI.alert("Error: " + json.error);
-//     }
-//   } catch (e) {
-//     UI.alert(
-//       "Connection failed. Is the Python server running? Error: " + e.toString()
-//     );
-//   }
-// }
+    return cleanedSentence
+}
 
 function getSuggestions() {
-  let selections = getSelection();
+  const sentence = getTextBeforeCursor();
 
-  if (selections == null) {
-    return []
-  }
-
-  let [element, rangeElement] = selections;
-  // Calculate position
-  let [startOffset,
-    endOffsetInclusive] = getStartAndEndIndices(element, rangeElement);
-  let textObject = getTextFromSelectionElement(element, rangeElement, startOffset, endOffsetInclusive);
-
-  if (textObject == null) {
+  if (sentence === "") {
+    UI.alert("Document is blank. Please input some text!");
     return;
   }
-
-  let [_, sentence] = textObject
 
   try {
     const payload = {
@@ -251,29 +206,49 @@ function getSuggestions() {
       options
     );
     const json = JSON.parse(response.getContentText());
-    return json.suggestions || []
-  } catch (err)  {
-    console.log("error getting suggestions", err)
+    return json.suggestions || [];
+  } catch (err) {
+    console.log("error getting suggestions", err);
   }
 }
 
-function replaceText(word){
-  const doc = DocumentApp.getActiveDocument();
-  const selection = doc.getSelection();
+function replaceText(word) {
+  const sentence = getTextBeforeCursor();
 
-  if (!selection) return;
+  if (sentence == "") {
+    UI.alert("Document is blank. Please input some text!");
+    return;
+  }
 
-  const rangeElement = selection.getRangeElements()[0];
-  const element = rangeElement.getElement();
-  const start = rangeElement.getStartOffset();
-  const end = rangeElement.getEndOffsetInclusive();
+  let suffix = "";
+  const body = DOC.getBody();
 
-  element.deleteText(start, end);
-  element.insertText(start, word);
+  if (sentence.endsWith(" ")) {
+    // Insert full word
+    suffix = word;
+  } else {
+    // Insert partial word
+    let tokens = sentence.trim().split(/\s+/);
+    let prefix = tokens[tokens.length - 1];
 
-  doc.setCursor(doc.newPosition(element, start + word.length));
+    if (word.startsWith(prefix.toLowerCase())) {
+      suffix = word.substring(prefix.length);
+    } else {
+      suffix = " " + word;
+    }
+  }
+
+  if (suffix.length == 0) {
+    return;
+  }
+
+  const paragraphs = body.getParagraphs();
+  const lastParagraph = paragraphs[paragraphs.length - 1];
+  const lastText = lastParagraph.editAsText();
+
+  lastText.appendText(suffix);
 }
 
-function refreshSidebarContent(){
-  showSideBar()
+function refreshSidebarContent() {
+  showSideBar();
 }
