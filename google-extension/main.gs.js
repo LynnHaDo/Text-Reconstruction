@@ -164,82 +164,17 @@ function fixSelection(mode = APP_CONFIG.DEFAULT_MODE) {
   }
 }
 
-// function completeSelection() {
-//   let selections = getSelection();
-
-//   if (selections == null) {
-//     return;
-//   }
-
-//   let [element, rangeElement] = selections;
-//   // Calculate position
-//   let [startOffset,
-//     endOffsetInclusive] = getStartAndEndIndices(element, rangeElement);
-//   let textObject = getTextFromSelectionElement(element, rangeElement, startOffset, endOffsetInclusive);
-
-//   if (textObject == null) {
-//     return;
-//   }
-
-//   let [_, sentence] = textObject
-
-//   try {
-//     const payload = {
-//       text: sentence,
-//     };
-
-//     const options = {
-//       method: "post",
-//       contentType: "application/json",
-//       payload: JSON.stringify(payload),
-//     };
-
-//     // Call the backend
-//     const response = UrlFetchApp.fetch(
-//       `${API_URL}${AUTOCOMPLETE_ENDPOINT}`,
-//       options
-//     );
-//     const json = JSON.parse(response.getContentText());
-
-//     if (json.suggestions && json.suggestions.length > 0) {
-//       const fullWord = json.suggestions[0]
-//       const tokens = sentence.trim().split(/\s/)
-//       const prefix = tokens[tokens.length - 1]
-
-//       if (fullWord.startsWith(prefix)) {
-//         const suffix = fullWord.substring(prefix.length)
-
-//         if (suffix.length > 0) {
-//             element.insertText(endOffsetInclusive + 1, suffix)
-//         }
-//       }
-//       else {
-//         element.insertText(endOffsetInclusive + 1, fullWord)
-//       }
-//       const newCursorPosition = DOC.newPosition(element, element.getText().length)
-//       DOC.setCursor(newCursorPosition)
-
-//     } else {
-//       UI.alert("Error: " + json.error);
-//     }
-//   } catch (e) {
-//     UI.alert(
-//       "Connection failed. Is the Python server running? Error: " + e.toString()
-//     );
-//   }
-// }
-
-function getAllTextInDoc() {
-    const body = DOC.getBody();
+function getTextBeforeCursor() {
+  const body = DOC.getBody();
     const sentence = body.getText();
 
     if (!sentence.trim()) {
         return "";
     }
 
-    const cleanedSentence = sentence.replace(/[\n\r]/g, '')
+    let cleanedSentence = sentence.replace(/[\n\r]/g, '')
 
-    if (sentence.endsWith(" ")) {
+    if (cleanedSentence.endsWith(" ")) {
         cleanedSentence = cleanedSentence.trimEnd() + " "
     }
 
@@ -247,9 +182,9 @@ function getAllTextInDoc() {
 }
 
 function getSuggestions() {
-  const sentence = getAllTextInDoc();
+  const sentence = getTextBeforeCursor();
 
-  if (sentence == "") {
+  if (sentence === "") {
     UI.alert("Document is blank. Please input some text!");
     return;
   }
@@ -278,7 +213,7 @@ function getSuggestions() {
 }
 
 function replaceText(word) {
-  const sentence = getAllTextInDoc();
+  const sentence = getTextBeforeCursor();
 
   if (sentence == "") {
     UI.alert("Document is blank. Please input some text!");
@@ -286,31 +221,31 @@ function replaceText(word) {
   }
 
   let suffix = "";
-  const body = DOC.getBody()
+  const body = DOC.getBody();
 
   if (sentence.endsWith(" ")) {
     // Insert full word
-    suffix = word
+    suffix = word;
   } else {
     // Insert partial word
-    let tokens = sentence.trim().split(/\s+/)
-    let prefix = tokens[tokens.length - 1]
+    let tokens = sentence.trim().split(/\s+/);
+    let prefix = tokens[tokens.length - 1];
 
     if (word.startsWith(prefix.toLowerCase())) {
-        suffix = word.substring(prefix.length);
+      suffix = word.substring(prefix.length);
     } else {
-        suffix = " " + word; 
+      suffix = " " + word;
     }
   }
 
   if (suffix.length == 0) {
-      return;
+    return;
   }
 
   const paragraphs = body.getParagraphs();
   const lastParagraph = paragraphs[paragraphs.length - 1];
   const lastText = lastParagraph.editAsText();
-  
+
   lastText.appendText(suffix);
 }
 
