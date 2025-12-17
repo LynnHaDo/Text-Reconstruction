@@ -44,7 +44,7 @@ pip install -r requirements.txt
 python server.py
 ```
 
-## Steps to set up client
+## Steps to push code to client
 
 1. Install clasp
 
@@ -58,7 +58,17 @@ npm install -g @google/clasp
 cd google-extension
 ```
 
-3. Push/pull
+3. Clone the code from remote repo in App Script
+
+```
+clasp clone 'SCRIPT_ID'
+```
+
+(Please contact Lynn @ do24l@mtholyoke.edu to obtain the id of the repo)
+
+4. Push/pull
+
+Once you get the code, you can make changes and push/pull the code to remote repo.
 
 * Upload changes to Google Docs
 * Pull changes made in the Browser
